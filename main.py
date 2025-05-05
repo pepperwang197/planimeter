@@ -77,8 +77,8 @@ def main():
     scrn = pygame.display.set_mode((xmax, ymax))
     pygame.display.set_caption("Planimeter simulation")
 
-    P = 300
-    T = 300
+    P = 400
+    T = 200
     CENTER = (100, 100)
 
     WHEEL_LEN = 20
@@ -88,6 +88,8 @@ def main():
     wheel_positions = []
 
     M = 0
+    s = 0  ###############
+    wheel_displacement = 0
 
     light_blue = pygame.Color("#1d88c2")
     magenta = pygame.Color("#b33484")
@@ -95,7 +97,7 @@ def main():
 
     scrn.fill("white")
     xy = (400, 200)
-    pivot = find_circles_intersection(CENTER[0], CENTER[1], xy[0], xy[1], T, P)
+    pivot = find_circles_intersection(CENTER[0], CENTER[1], xy[0], xy[1], P, T)
     draw_grid(scrn, xmax, ymax)
     pygame.draw.line(scrn, "blue", CENTER, pivot, width=10)
     pygame.draw.line(scrn, "red", xy, pivot, width=10)
@@ -116,48 +118,57 @@ def main():
         if pygame.mouse.get_pressed()[0]:
             xy = pygame.mouse.get_pos()
             # calculate pivot point
-            pivot = find_circles_intersection(CENTER[0], CENTER[1], xy[0], xy[1], T, P)
+            pivot = find_circles_intersection(CENTER[0], CENTER[1], xy[0], xy[1], P, T)
             if pivot is not None:
                 all_coords.append(xy)
                 all_pivots.append(pivot)
 
-        if pivot is not None:
-            if len(all_coords) >= 2:
-                pygame.draw.lines(scrn, "black", False, all_coords, width=2)
-
                 try:
-                    theta1 = calculate_slope(xy, pivot)
-                    theta3 = calculate_slope(all_coords[-2], all_pivots[-2])
-                    theta = theta3 - theta1
-
+                    pivot_displacement_angle = calculate_slope(pivot, all_pivots[-2])
                     delta_s = math.sqrt(
                         (pivot[0] - all_pivots[-2][0]) ** 2
                         + (pivot[1] - all_pivots[-2][1]) ** 2
                     )
-                    M += T * theta + delta_s
-
-                    # display_text(
-                    #     scrn,
-                    #     str(int(theta * 180 / math.pi)),
-                    #     yellow,
-                    #     (0, 0),
-                    #     x_offset=50,
-                    #     y_offset=25,
-                    # )
-                    # display_text(
-                    #     scrn,
-                    #     str(int(delta_s)),
-                    #     yellow,
-                    #     (0, 20),
-                    #     x_offset=50,
-                    #     y_offset=25,
-                    # )
-                except ZeroDivisionError:
+                    wheel_displacement += delta_s * math.cos(pivot_displacement_angle)
+                except:
                     pass
 
-                display_text(
-                    scrn, str(int(M)), "black", (0, 0), x_offset=50, y_offset=25
+        display_text(
+            scrn,
+            str(int(wheel_displacement)),
+            "black",
+            (0, 0),
+            x_offset=50,
+            y_offset=25,
+        )
+
+        """
+            try:
+                theta = calculate_slope(
+                    all_coords[-2], all_pivots[-2]
+                ) - calculate_slope(xy, pivot)
+
+                delta_s = math.sqrt(
+                    (pivot[0] - all_pivots[-2][0]) ** 2
+                    + (pivot[1] - all_pivots[-2][1]) ** 2
                 )
+                if ((pivot[0] - all_pivots[-2][0]) >= 0) != (
+                    (pivot[1] - all_pivots[-2][1]) >= 0
+                ):
+                    delta_s = -delta_s
+                M += T * theta  # + delta_s
+                s += delta_s
+                
+            except:
+                pass
+
+        display_text(scrn, str(int(M)), "black", (0, 0), x_offset=50, y_offset=25)
+        display_text(scrn, str(int(s)), "black", (0, 0), x_offset=50, y_offset=50)
+        """
+
+        if pivot is not None:
+            if len(all_coords) >= 2:
+                pygame.draw.lines(scrn, "black", False, all_coords, width=2)
 
             wheel = (
                 pivot[0] + (pivot[0] - xy[0]) / 4,
