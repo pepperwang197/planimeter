@@ -57,29 +57,37 @@ def display_text(scrn, text, color, coords, x_offset=10, y_offset=25):
     scrn.blit(text, text_rect)
 
 
-def draw_grid(scrn, xmax, ymax, interval=50):
+def draw_grid(scrn, xmax, ymax, center, interval=50):
     for i in range(0, xmax, interval):
         pygame.draw.line(scrn, pygame.Color("#bfbfbf"), (i, 0), (i, ymax))
 
     for i in range(0, ymax, interval):
         pygame.draw.line(scrn, pygame.Color("#bfbfbf"), (0, i), (xmax, i))
 
+    # pygame.draw.line(
+    #     scrn, pygame.Color("#737373"), (center[0], 0), (center[0], ymax), width=2
+    # )
+    # pygame.draw.line(
+    #     scrn, pygame.Color("#737373"), (0, center[1]), (xmax, center[1]), width=2
+    # )
+
+
+def draw_button(scrn):
+    pygame.draw.rect(scrn, pygame.Color("#bfbfbf"), pygame.Rect(500, 0, 100, 100))
+    display_text(scrn, "RESET", "black", (550, 50), x_offset=0, y_offset=0)
+
 
 def calculate_slope(start: tuple[int, int], end: tuple[int, int]) -> float:
     return math.atan2((end[1] - start[1]), (end[0] - start[0]))
 
 
-def main():
+def sim(scrn, xmax, ymax):
 
-    xmax = 600
-    ymax = 600
-
-    scrn = pygame.display.set_mode((xmax, ymax))
     pygame.display.set_caption("Planimeter simulation")
 
-    P = 400
-    T = 200
-    CENTER = (100, 100)
+    P = 800
+    T = 400
+    CENTER = (200, 200)
 
     WHEEL_LEN = 20
 
@@ -87,18 +95,14 @@ def main():
     all_pivots = []
     wheel_positions = []
 
-    M = 0
-    s = 0  ###############
-    wheel_displacement = 0
-
     light_blue = pygame.Color("#1d88c2")
     magenta = pygame.Color("#b33484")
     yellow = pygame.Color("#e3c51b")
 
     scrn.fill("white")
-    xy = (400, 200)
+    xy = (800, 400)
     pivot = find_circles_intersection(CENTER[0], CENTER[1], xy[0], xy[1], P, T)
-    draw_grid(scrn, xmax, ymax)
+    draw_grid(scrn, xmax, ymax, CENTER)
     pygame.draw.line(scrn, "blue", CENTER, pivot, width=10)
     pygame.draw.line(scrn, "red", xy, pivot, width=10)
     pygame.draw.circle(scrn, light_blue, pivot, 8)
@@ -107,64 +111,26 @@ def main():
     display_text(scrn, "(a,b)", light_blue, pivot)
     display_text(scrn, "(x,y)", magenta, xy)
     display_text(scrn, "(0,0)", "black", CENTER, x_offset=-20, y_offset=-25)
+
+    draw_button(scrn)
+
     pygame.display.flip()
 
     while True:
         scrn.fill("white")
-        draw_grid(scrn, xmax, ymax)
+        draw_grid(scrn, xmax, ymax, CENTER)
 
         # get user input for current position
         pygame.event.get()
         if pygame.mouse.get_pressed()[0]:
             xy = pygame.mouse.get_pos()
+            if xy[0] > 500 and xy[1] < 100:
+                return
             # calculate pivot point
             pivot = find_circles_intersection(CENTER[0], CENTER[1], xy[0], xy[1], P, T)
             if pivot is not None:
                 all_coords.append(xy)
                 all_pivots.append(pivot)
-
-                try:
-                    pivot_displacement_angle = calculate_slope(pivot, all_pivots[-2])
-                    delta_s = math.sqrt(
-                        (pivot[0] - all_pivots[-2][0]) ** 2
-                        + (pivot[1] - all_pivots[-2][1]) ** 2
-                    )
-                    wheel_displacement += delta_s * math.cos(pivot_displacement_angle)
-                except:
-                    pass
-
-        display_text(
-            scrn,
-            str(int(wheel_displacement)),
-            "black",
-            (0, 0),
-            x_offset=50,
-            y_offset=25,
-        )
-
-        """
-            try:
-                theta = calculate_slope(
-                    all_coords[-2], all_pivots[-2]
-                ) - calculate_slope(xy, pivot)
-
-                delta_s = math.sqrt(
-                    (pivot[0] - all_pivots[-2][0]) ** 2
-                    + (pivot[1] - all_pivots[-2][1]) ** 2
-                )
-                if ((pivot[0] - all_pivots[-2][0]) >= 0) != (
-                    (pivot[1] - all_pivots[-2][1]) >= 0
-                ):
-                    delta_s = -delta_s
-                M += T * theta  # + delta_s
-                s += delta_s
-                
-            except:
-                pass
-
-        display_text(scrn, str(int(M)), "black", (0, 0), x_offset=50, y_offset=25)
-        display_text(scrn, str(int(s)), "black", (0, 0), x_offset=50, y_offset=50)
-        """
 
         if pivot is not None:
             if len(all_coords) >= 2:
@@ -199,10 +165,22 @@ def main():
             display_text(scrn, "(a,b)", light_blue, pivot)
             display_text(scrn, "(x,y)", magenta, xy)
             display_text(scrn, "(0,0)", "black", CENTER, x_offset=-20, y_offset=-25)
-            display_text(scrn, "W", yellow, wheel, y_offset=-35)
+            display_text(scrn, "W", yellow, wheel, x_offset=-30, y_offset=0)
+
+            draw_button(scrn)
 
             pygame.display.flip()
         sleep(0.002)
+
+
+def main():
+
+    xmax = 1500
+    ymax = 1000
+    scrn = pygame.display.set_mode((xmax, ymax))
+
+    while True:
+        sim(scrn, xmax, ymax)
 
 
 if __name__ == "__main__":
